@@ -6,9 +6,11 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.TextView
 import androidx.activity.viewModels
+import dagger.hilt.android.AndroidEntryPoint
 import io.fonimus.pokedexmvvm.R
 import io.fonimus.pokedexmvvm.main.PokemonViewModel
 
+@AndroidEntryPoint
 class DetailActivity : AppCompatActivity() {
 
     companion object {
