@@ -53,7 +53,7 @@ object PokemonDiffUtil : DiffUtil.ItemCallback<PokemonViewState>() {
     override fun areItemsTheSame(oldItem: PokemonViewState, newItem: PokemonViewState) =
         oldItem is PokemonViewState.Loading && newItem is PokemonViewState.Loading
                 || oldItem is PokemonViewState.Content && newItem is PokemonViewState.Content
-                && oldItem.pokemonNumber == newItem.pokemonNumber
+                && oldItem.pokemonId == newItem.pokemonId
 
     override fun areContentsTheSame(oldItem: PokemonViewState, newItem: PokemonViewState) =
         oldItem == newItem
@@ -62,13 +62,11 @@ object PokemonDiffUtil : DiffUtil.ItemCallback<PokemonViewState>() {
 class PokemonViewContentHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
     private val pokemonCard: CardView = itemView.findViewById(R.id.pokemon_card)
-    private val pokemonNumberTextView: TextView = itemView.findViewById(R.id.pokemon_number)
     private val pokemonNameTextView: TextView = itemView.findViewById(R.id.pokemon_name)
     private val pokemonImageView: ImageView = itemView.findViewById(R.id.pokemon_image)
 
     fun bind(state: PokemonViewState.Content, onClickEvent: (PokemonViewState.Content) -> Unit) {
         pokemonCard.setOnClickListener { onClickEvent(state) }
-        pokemonNumberTextView.text = state.pokemonNumber
         pokemonNameTextView.text = state.pokemonName
         Glide.with(pokemonImageView).load(state.pokemonImageUrl)
             .fitCenter()

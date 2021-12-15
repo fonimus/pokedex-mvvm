@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">PokedexMvvm</string>
+    <string name="number">Numéro</string>
+    <string name="type">Type</string>
+    <string name="weight">Poids</string>
+    <string name="search_title">Recherche</string>
 </resources>

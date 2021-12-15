@@ -2,6 +2,9 @@ package io.fonimus.pokedexmvvm.main
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuInflater
+import android.widget.SearchView
 import androidx.activity.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -20,7 +23,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val onLoadingEventListener: () -> Unit = {
-            pokemonViewModel.loadNextPage()
+//            pokemonViewModel.loadNextPage()
         }
         val onPokemonClicked: (PokemonViewState.Content) -> Unit = {
             pokemonViewModel.onPokemonClicked(it)
@@ -28,7 +31,20 @@ class MainActivity : AppCompatActivity() {
         val recyclerView: RecyclerView = findViewById(R.id.main_recycler_view)
         val adapter = PokemonAdapter(onPokemonClicked, onLoadingEventListener)
         recyclerView.adapter = adapter
-        recyclerView.layoutManager = LinearLayoutManager(this)
+        val layoutManager = LinearLayoutManager(this)
+        recyclerView.layoutManager = layoutManager
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    val viewHolder = recyclerView.findViewHolderForAdapterPosition(
+                        layoutManager.findLastCompletelyVisibleItemPosition()
+                    )
+                    if (viewHolder is PokemonViewLoadingHolder) {
+                        pokemonViewModel.loadNextPage()
+                    }
+                }
+            }
+        })
 
         pokemonViewModel.pokemonViewStateLiveData.observe(this) { list ->
             adapter.submitList(list)
@@ -44,5 +60,24 @@ class MainActivity : AppCompatActivity() {
                 is PokemonViewActions.NavigateToDetail2 -> TODO()
             }.exhaustive
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        val search = menu.findItem(R.id.search) as SearchView
+        search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                // when search in keyboard clicked
+                return true
+            }
+
+            override fun onQueryTextChange(query: String?): Boolean {
+                pokemonViewModel.onQueryTextChange(query)
+                return true
+            }
+
+        })
+        return true
     }
 }

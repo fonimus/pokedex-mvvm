@@ -6,7 +6,7 @@ sealed class PokemonViewState(val type: Type) {
     }
 
     data class Content(
-        val pokemonNumber: String,
+        val pokemonId: String,
         val pokemonName: String,
         val pokemonImageUrl: String
     ) : PokemonViewState(Type.CONTENT)
