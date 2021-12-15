@@ -12,5 +12,14 @@
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
+
+        <!-- enable window content transitions (shared element transition) -->
+        <item name="android:windowActivityTransitions">true</item>
+        <item name="android:windowEnterTransition">@transition/fade_delay</item>
+        <item name="android:windowReenterTransition">@transition/fade_delay</item>
+        <item name="android:windowReturnTransition">@transition/fade</item>
+        <item name="android:windowExitTransition">@transition/fade</item>
+        <item name="android:windowSharedElementEnterTransition">@transition/autotransition</item>
+        <item name="android:windowSharedElementExitTransition">@transition/autotransition</item>
     </style>
 </resources>

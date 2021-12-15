@@ -13,19 +13,19 @@ import com.bumptech.glide.Glide
 import io.fonimus.pokedexmvvm.R
 
 class PokemonAdapter(
-    private val onClickEvent: (PokemonViewState.Content) -> Unit,
+    private val onClickEvent: (PokemonViewStateItem.Content, View, View) -> Unit,
     private val onLoadingEvent: () -> Unit
 ) :
-    ListAdapter<PokemonViewState, RecyclerView.ViewHolder>(PokemonDiffUtil) {
+    ListAdapter<PokemonViewStateItem, RecyclerView.ViewHolder>(PokemonDiffUtil) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
-        when (PokemonViewState.Type.values()[viewType]) {
-            PokemonViewState.Type.CONTENT ->
+        when (PokemonViewStateItem.Type.values()[viewType]) {
+            PokemonViewStateItem.Type.CONTENT ->
                 PokemonViewContentHolder(
                     LayoutInflater.from(parent.context)
                         .inflate(R.layout.pokemon_itemview, parent, false)
                 )
-            PokemonViewState.Type.LOADING ->
+            PokemonViewStateItem.Type.LOADING ->
                 PokemonViewLoadingHolder(
                     LayoutInflater.from(parent.context)
                         .inflate(R.layout.pokemon_loading_itemview, parent, false)
@@ -35,11 +35,11 @@ class PokemonAdapter(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val item = getItem(position)) {
-            is PokemonViewState.Content -> (holder as PokemonViewContentHolder).bind(
+            is PokemonViewStateItem.Content -> (holder as PokemonViewContentHolder).bind(
                 item,
                 onClickEvent
             )
-            is PokemonViewState.Loading -> onLoadingEvent.invoke()
+            is PokemonViewStateItem.Loading -> onLoadingEvent.invoke()
         }
     }
 
@@ -49,13 +49,13 @@ class PokemonAdapter(
 
 }
 
-object PokemonDiffUtil : DiffUtil.ItemCallback<PokemonViewState>() {
-    override fun areItemsTheSame(oldItem: PokemonViewState, newItem: PokemonViewState) =
-        oldItem is PokemonViewState.Loading && newItem is PokemonViewState.Loading
-                || oldItem is PokemonViewState.Content && newItem is PokemonViewState.Content
+object PokemonDiffUtil : DiffUtil.ItemCallback<PokemonViewStateItem>() {
+    override fun areItemsTheSame(oldItem: PokemonViewStateItem, newItem: PokemonViewStateItem) =
+        oldItem is PokemonViewStateItem.Loading && newItem is PokemonViewStateItem.Loading
+                || oldItem is PokemonViewStateItem.Content && newItem is PokemonViewStateItem.Content
                 && oldItem.pokemonId == newItem.pokemonId
 
-    override fun areContentsTheSame(oldItem: PokemonViewState, newItem: PokemonViewState) =
+    override fun areContentsTheSame(oldItem: PokemonViewStateItem, newItem: PokemonViewStateItem) =
         oldItem == newItem
 }
 
@@ -65,9 +65,11 @@ class PokemonViewContentHolder(itemView: View) : RecyclerView.ViewHolder(itemVie
     private val pokemonNameTextView: TextView = itemView.findViewById(R.id.pokemon_name)
     private val pokemonImageView: ImageView = itemView.findViewById(R.id.pokemon_image)
 
-    fun bind(state: PokemonViewState.Content, onClickEvent: (PokemonViewState.Content) -> Unit) {
-        pokemonCard.setOnClickListener { onClickEvent(state) }
+    fun bind(state: PokemonViewStateItem.Content, onClickEvent: (PokemonViewStateItem.Content, View, View) -> Unit) {
+        pokemonCard.setOnClickListener { onClickEvent(state, pokemonNameTextView, pokemonImageView) }
         pokemonNameTextView.text = state.pokemonName
+        pokemonNameTextView.transitionName = getTransitionName(state.pokemonId, TransitionType.TEXT)
+        pokemonImageView.transitionName = getTransitionName(state.pokemonId, TransitionType.IMAGE)
         Glide.with(pokemonImageView).load(state.pokemonImageUrl)
             .fitCenter()
             .into(pokemonImageView)
@@ -76,3 +78,8 @@ class PokemonViewContentHolder(itemView: View) : RecyclerView.ViewHolder(itemVie
 }
 
 class PokemonViewLoadingHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+
+fun getTransitionName(pokemonId: String, type: TransitionType): String = "transition-$type-${pokemonId}"
+enum class TransitionType {
+    TEXT,IMAGE
+}

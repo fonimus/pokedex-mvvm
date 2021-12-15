@@ -1,6 +1,13 @@
 package io.fonimus.pokedexmvvm.main
 
-sealed class PokemonViewState(val type: Type) {
+import io.fonimus.pokedexmvvm.domain.PokemonTypeEntity
+
+data class PokemonViewState(
+    val items: List<PokemonViewStateItem>,
+    val types: Set<PokemonTypeEntity>
+)
+
+sealed class PokemonViewStateItem(val type: Type) {
     enum class Type {
         CONTENT, LOADING
     }
@@ -9,7 +16,7 @@ sealed class PokemonViewState(val type: Type) {
         val pokemonId: String,
         val pokemonName: String,
         val pokemonImageUrl: String
-    ) : PokemonViewState(Type.CONTENT)
+    ) : PokemonViewStateItem(Type.CONTENT)
 
-    object Loading : PokemonViewState(Type.LOADING)
+    object Loading : PokemonViewStateItem(Type.LOADING)
 }

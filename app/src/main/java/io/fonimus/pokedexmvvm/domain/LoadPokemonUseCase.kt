@@ -3,6 +3,7 @@ package io.fonimus.pokedexmvvm.domain
 import android.util.Log
 import io.fonimus.pokedexmvvm.data.PokemonRepository
 import kotlinx.coroutines.flow.*
+import java.util.*
 import javax.inject.Inject
 
 class LoadPokemonUseCase @Inject constructor(private val repository: PokemonRepository) {
@@ -26,7 +27,16 @@ class LoadPokemonUseCase @Inject constructor(private val repository: PokemonRepo
                 PokemonEntity.Content(
                     pokemon.id?.toString() ?: return@mapNotNull null,
                     pokemon.name ?: return@mapNotNull null,
-                    pokemon.sprites?.frontDefault ?: return@mapNotNull null
+                    pokemon.sprites?.frontDefault ?: return@mapNotNull null,
+                    pokemon.types.mapNotNull {
+                        it.type?.name?.uppercase(
+                            Locale.getDefault()
+                        )?.let { it1 ->
+                            PokemonTypeEntity.valueOf(
+                                it1
+                            )
+                        }
+                    }
                 )
             })
             pokemons + PokemonEntity.Loading(true)
@@ -43,7 +53,8 @@ class LoadPokemonUseCase @Inject constructor(private val repository: PokemonRepo
         data class Content(
             val pokemonNumber: String,
             val pokemonName: String,
-            val pokemonImageUrl: String
+            val pokemonImageUrl: String,
+            val pokemonTypes: List<PokemonTypeEntity>
         ) : PokemonEntity()
 
         data class Loading(val loading: Boolean) : PokemonEntity()

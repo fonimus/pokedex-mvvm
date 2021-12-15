@@ -1,16 +1,21 @@
 package io.fonimus.pokedexmvvm.main
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.Menu
-import android.view.MenuInflater
+import android.view.View
 import android.widget.SearchView
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityOptionsCompat
+import androidx.core.util.Pair
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import dagger.hilt.android.AndroidEntryPoint
 import io.fonimus.pokedexmvvm.R
 import io.fonimus.pokedexmvvm.detail.DetailActivity
+import io.fonimus.pokedexmvvm.domain.PokemonTypeEntity
 import io.fonimus.pokedexmvvm.exhaustive
 
 @AndroidEntryPoint
@@ -25,9 +30,10 @@ class MainActivity : AppCompatActivity() {
         val onLoadingEventListener: () -> Unit = {
 //            pokemonViewModel.loadNextPage()
         }
-        val onPokemonClicked: (PokemonViewState.Content) -> Unit = {
-            pokemonViewModel.onPokemonClicked(it)
-        }
+        val onPokemonClicked: (PokemonViewStateItem.Content, View, View) -> Unit =
+            { content, textView, imageView ->
+                pokemonViewModel.onPokemonClicked(content, textView, imageView)
+            }
         val recyclerView: RecyclerView = findViewById(R.id.main_recycler_view)
         val adapter = PokemonAdapter(onPokemonClicked, onLoadingEventListener)
         recyclerView.adapter = adapter
@@ -46,17 +52,30 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        pokemonViewModel.pokemonViewStateLiveData.observe(this) { list ->
-            adapter.submitList(list)
+        val searchTypes = findViewById<ChipGroup>(R.id.search_types)
+        pokemonViewModel.pokemonViewStateLiveData.observe(this) { state ->
+            adapter.submitList(state.items)
+            state.types.forEach { type -> searchTypes.addChip(type) }
         }
         pokemonViewModel.viewActions.observe(this) {
             when (it) {
-                is PokemonViewActions.NavigateToDetail -> startActivity(
-                    DetailActivity.navigate(
+                is PokemonViewActions.NavigateToDetail -> {
+                    val imageViewPair = Pair(it.imageView, it.imageView.transitionName)
+                    val textViewPair = Pair(it.textView, it.textView.transitionName)
+
+                    val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
                         this,
-                        it.pokemonId
+                        imageViewPair,
+                        textViewPair
                     )
-                )
+                    startActivity(
+                        DetailActivity.navigate(
+                            this,
+                            it.pokemonId,
+                            it.pokemonId
+                        ), options.toBundle()
+                    )
+                }
                 is PokemonViewActions.NavigateToDetail2 -> TODO()
             }.exhaustive
         }
@@ -79,5 +98,24 @@ class MainActivity : AppCompatActivity() {
 
         })
         return true
+    }
+
+    private fun ChipGroup.addChip(type: PokemonTypeEntity) {
+        val chip = Chip(context)
+        chip.text = type.name
+        chip.isCheckable = true
+        chip.setChipIconResource(type.icon)
+        chip.setChipBackgroundColorResource(R.color.grey)
+        chip.isCheckedIconVisible = false
+        chip.setOnCheckedChangeListener { _, checked: Boolean ->
+            pokemonViewModel.onTypeChange(type, checked)
+            if (checked) {
+                chip.setChipBackgroundColorResource(type.color)
+            } else {
+                chip.setChipBackgroundColorResource(R.color.grey)
+            }
+            chip.isCloseIconVisible = checked
+        }
+        addView(chip)
     }
 }
