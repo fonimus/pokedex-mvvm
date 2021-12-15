@@ -19,10 +19,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val recyclerView: RecyclerView = findViewById(R.id.main_recycler_view)
-        val adapter = PokemonAdapter {
+        val onLoadingEventListener: () -> Unit = {
+            pokemonViewModel.loadNextPage()
+        }
+        val onPokemonClicked: (PokemonViewState.Content) -> Unit = {
             pokemonViewModel.onPokemonClicked(it)
         }
+        val recyclerView: RecyclerView = findViewById(R.id.main_recycler_view)
+        val adapter = PokemonAdapter(onPokemonClicked, onLoadingEventListener)
         recyclerView.adapter = adapter
         recyclerView.layoutManager = LinearLayoutManager(this)
 

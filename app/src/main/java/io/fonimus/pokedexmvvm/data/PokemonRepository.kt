@@ -1,8 +1,7 @@
 package io.fonimus.pokedexmvvm.data
 
+import android.util.Log
 import io.fonimus.pokedexmvvm.data.pokemon.PokemonResponse
-import io.fonimus.pokedexmvvm.data.pokemon.PokemonSprites
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import okhttp3.OkHttpClient
@@ -35,24 +34,15 @@ class PokemonRepository @Inject constructor() {
         pokeApi = retrofit.create(PokeApi::class.java)
     }
 
-    fun getAllPokemons(): Flow<List<PokemonResponse>> = flow {
+    fun getPokemonPage(page: Int = 0): Flow<List<PokemonResponse>> = flow {
         val list = mutableListOf<PokemonResponse>()
-        var i = 1
-        while (true) {
-            delay(500)
-            if (i == 4) {
-                list.add(
-                    1,
-                    PokemonResponse(
-                        name = "TEST",
-                        id = 2,
-                        sprites = PokemonSprites(frontDefault = "https://www.pokepedia.fr/images/5/54/Sprite_MissingNo._RV.png")
-                    )
-                )
-            }
-            pokeApi.getPokemonById("${i++}")?.let { list.add(it) }
-            emit(list)
+        val from = 1 + (page * 5)
+        val to = 1 + ((page + 1) * 5)
+        for (i in from until to) {
+            pokeApi.getPokemonById(i.toString())?.let { list.add(it) }
         }
+        Log.i("myrepo", "getPokemonPage() called from $from to $to : $list")
+        emit(list)
     }
 
     suspend fun getPokemonById(id: String) = pokeApi.getPokemonById(id)
