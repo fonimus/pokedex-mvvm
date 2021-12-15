@@ -64,7 +64,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
-        val search = menu.findItem(R.id.search) as SearchView
+        val search = menu.findItem(R.id.search_pokemon).actionView as SearchView
         search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
 
             override fun onQueryTextSubmit(query: String?): Boolean {

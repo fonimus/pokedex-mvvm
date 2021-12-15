@@ -4,16 +4,15 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="../../../../../layout/custom_preview.xml" value="0.3851282051282051" />
-        <entry key="app/src/main/res/drawable/circle.xml" value="0.1859375" />
+        <entry key="..\:/Work/LV/francois/pokedex-mvvm/app/src/main/res/menu/main_menu.xml" value="0.10104166666666667" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.37604166666666666" />
         <entry key="app/src/main/res/layout/detail_activity.xml" value="0.35185185185185186" />
         <entry key="app/src/main/res/layout/pokemon_itemview.xml" value="0.25" />
         <entry key="app/src/main/res/layout/pokemon_loading_itemview.xml" value="0.2657407407407407" />
-        <entry key="app/src/main/res/menu/main_menu.xml" value="0.2520833333333333" />
       </map>
     </option>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" project-jdk-name="Android Studio default JDK" project-jdk-type="JavaSDK">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" project-jdk-name="11" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/build/classes" />
   </component>
   <component name="ProjectType">
