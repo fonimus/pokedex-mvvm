@@ -41,7 +41,7 @@ class PokemonRepository @Inject constructor() {
         for (i in from until to) {
             pokeApi.getPokemonById(i.toString())?.let { list.add(it) }
         }
-        Log.i("myrepo", "getPokemonPage() called from $from to $to : $list")
+        Log.d("myrepo", "getPokemonPage() called from $from to $to")
         emit(list)
     }
 
