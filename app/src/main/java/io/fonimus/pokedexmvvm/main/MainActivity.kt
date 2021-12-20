@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 import io.fonimus.pokedexmvvm.R
+import io.fonimus.pokedexmvvm.SettingsActivity
 import io.fonimus.pokedexmvvm.detail.DetailActivity
 import io.fonimus.pokedexmvvm.exhaustive
 
@@ -85,8 +86,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
-        val search = menu.findItem(R.id.search_pokemon).actionView as SearchView
-        search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+
+        (menu.findItem(R.id.search_pokemon).actionView as SearchView).setOnQueryTextListener(object :
+            SearchView.OnQueryTextListener {
 
             override fun onQueryTextSubmit(query: String?): Boolean {
                 // when search in keyboard clicked
@@ -97,8 +99,12 @@ class MainActivity : AppCompatActivity() {
                 pokemonViewModel.onQueryTextChange(query)
                 return true
             }
-
         })
+
+        menu.findItem(R.id.open_settings).setOnMenuItemClickListener {
+            startActivity(SettingsActivity.navigate(this))
+            true
+        }
         return true
     }
 }

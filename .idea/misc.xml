@@ -14,7 +14,8 @@
         <entry key="app/src/main/res/layout/pokemon_loading_itemview.xml" value="0.2657407407407407" />
         <entry key="app/src/main/res/layout/settings_activity.xml" value="0.1287037037037037" />
         <entry key="app/src/main/res/layout/type_itemview.xml" value="0.37025641025641026" />
-        <entry key="app/src/main/res/xml/root_preferences.xml" value="0.1287037037037037" />
+        <entry key="app/src/main/res/menu/main_menu.xml" value="0.22447916666666667" />
+        <entry key="app/src/main/res/xml/root_preferences.xml" value="0.25" />
       </map>
     </option>
   </component>

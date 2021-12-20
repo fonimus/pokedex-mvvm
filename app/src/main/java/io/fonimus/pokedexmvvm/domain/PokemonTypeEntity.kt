@@ -12,7 +12,7 @@ enum class PokemonTypeEntity(val color: Int, val icon: Int) {
     GRASS(R.color.type_grass, R.drawable.ic_baseline_grass_24),
     ICE(R.color.type_ice, R.drawable.ic_baseline_not_interested_24),
     FIGHTING(R.color.type_fighting, R.drawable.ic_baseline_not_interested_24),
-    POISON(R.color.type_poison, R.drawable.ic_baseline_not_interested_24),
+    POISON(R.color.type_poison, R.drawable.ic_baseline_sick_24),
     GROUND(R.color.type_ground, R.drawable.ic_baseline_not_interested_24),
     FLYING(R.color.type_flying, R.drawable.ic_baseline_not_interested_24),
     PSYCHIC(R.color.type_psychic, R.drawable.ic_baseline_not_interested_24),

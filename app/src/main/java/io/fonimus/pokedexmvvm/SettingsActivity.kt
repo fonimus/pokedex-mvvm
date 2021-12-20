@@ -1,10 +1,17 @@
 package io.fonimus.pokedexmvvm
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceFragmentCompat
+import io.fonimus.pokedexmvvm.detail.DetailActivity
 
 class SettingsActivity : AppCompatActivity() {
+
+    companion object {
+        fun navigate(context: Context) = Intent(context, SettingsActivity::class.java)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
