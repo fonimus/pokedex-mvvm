@@ -2,7 +2,6 @@ package io.fonimus.pokedexmvvm.main
 
 import android.os.Bundle
 import android.view.Menu
-import android.view.View
 import android.widget.SearchView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -10,12 +9,9 @@ import androidx.core.app.ActivityOptionsCompat
 import androidx.core.util.Pair
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
 import dagger.hilt.android.AndroidEntryPoint
 import io.fonimus.pokedexmvvm.R
 import io.fonimus.pokedexmvvm.detail.DetailActivity
-import io.fonimus.pokedexmvvm.domain.PokemonTypeEntity
 import io.fonimus.pokedexmvvm.exhaustive
 
 @AndroidEntryPoint
@@ -27,19 +23,26 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val onLoadingEventListener: () -> Unit = {
-//            pokemonViewModel.loadNextPage()
+        val typeRecyclerView: RecyclerView = findViewById(R.id.main_search_types)
+        val typeAdapter = TypeAdapter { type, checked ->
+            pokemonViewModel.onTypeChange(type, checked)
         }
-        val onPokemonClicked: (PokemonViewStateItem.Content, View, View) -> Unit =
+        typeRecyclerView.adapter = typeAdapter
+        typeRecyclerView.layoutManager =
+            LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+
+        val pokemonsRecyclerView: RecyclerView = findViewById(R.id.main_recycler_view)
+        val pokemonsAdapter = PokemonAdapter(
             { content, textView, imageView ->
                 pokemonViewModel.onPokemonClicked(content, textView, imageView)
+            }, {
+                // nothing yet
             }
-        val recyclerView: RecyclerView = findViewById(R.id.main_recycler_view)
-        val adapter = PokemonAdapter(onPokemonClicked, onLoadingEventListener)
-        recyclerView.adapter = adapter
+        )
+        pokemonsRecyclerView.adapter = pokemonsAdapter
         val layoutManager = LinearLayoutManager(this)
-        recyclerView.layoutManager = layoutManager
-        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+        pokemonsRecyclerView.layoutManager = layoutManager
+        pokemonsRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 if (newState == RecyclerView.SCROLL_STATE_IDLE) {
                     val viewHolder = recyclerView.findViewHolderForAdapterPosition(
@@ -52,10 +55,9 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        val searchTypes = findViewById<ChipGroup>(R.id.search_types)
         pokemonViewModel.pokemonViewStateLiveData.observe(this) { state ->
-            adapter.submitList(state.items)
-            state.types.forEach { type -> searchTypes.addChip(type) }
+            pokemonsAdapter.submitList(state.items)
+            typeAdapter.submitList(state.types.toList())
         }
         pokemonViewModel.viewActions.observe(this) {
             when (it) {
@@ -98,24 +100,5 @@ class MainActivity : AppCompatActivity() {
 
         })
         return true
-    }
-
-    private fun ChipGroup.addChip(type: PokemonTypeEntity) {
-        val chip = Chip(context)
-        chip.text = type.name
-        chip.isCheckable = true
-        chip.setChipIconResource(type.icon)
-        chip.setChipBackgroundColorResource(R.color.grey)
-        chip.isCheckedIconVisible = false
-        chip.setOnCheckedChangeListener { _, checked: Boolean ->
-            pokemonViewModel.onTypeChange(type, checked)
-            if (checked) {
-                chip.setChipBackgroundColorResource(type.color)
-            } else {
-                chip.setChipBackgroundColorResource(R.color.grey)
-            }
-            chip.isCloseIconVisible = checked
-        }
-        addView(chip)
     }
 }

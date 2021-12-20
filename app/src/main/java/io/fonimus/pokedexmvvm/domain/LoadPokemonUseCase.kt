@@ -8,7 +8,6 @@ import javax.inject.Inject
 
 class LoadPokemonUseCase @Inject constructor(private val repository: PokemonRepository) {
 
-    //    private val isLoadingStateFlow = MutableStateFlow(true)
     private val pageStateFlow =
         MutableStateFlow(0).apply { onEach { Log.d("myusecase", "page stateflow called: $it") } }
 
@@ -16,26 +15,16 @@ class LoadPokemonUseCase @Inject constructor(private val repository: PokemonRepo
 
     operator fun invoke(): Flow<List<PokemonEntity>> {
 
-//       return combine(
-//            isLoadingStateFlow,
         return pageStateFlow.flatMapConcat {
             repository.getPokemonPage(it)
-//                    .onCompletion { isLoadingStateFlow.value = false }
         }.map { pokemonPage ->
-//        ) { isLoading, pokemonPage ->
             pokemons.addAll(pokemonPage.mapNotNull { pokemon ->
                 PokemonEntity.Content(
                     pokemon.id?.toString() ?: return@mapNotNull null,
                     pokemon.name ?: return@mapNotNull null,
                     pokemon.sprites?.frontDefault ?: return@mapNotNull null,
                     pokemon.types.mapNotNull {
-                        it.type?.name?.uppercase(
-                            Locale.getDefault()
-                        )?.let { it1 ->
-                            PokemonTypeEntity.valueOf(
-                                it1
-                            )
-                        }
+                        PokemonTypeEntity.parse(it.type?.name)
                     }
                 )
             })
@@ -44,7 +33,6 @@ class LoadPokemonUseCase @Inject constructor(private val repository: PokemonRepo
     }
 
     fun nextPage() {
-//        isLoadingStateFlow.value = true
         pageStateFlow.value++
         Log.d("mynextpage", "Next page called")
     }

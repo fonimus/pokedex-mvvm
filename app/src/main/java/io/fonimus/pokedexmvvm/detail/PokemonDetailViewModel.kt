@@ -49,9 +49,6 @@ class PokemonDetailViewModel @Inject constructor(private val repository: Pokemon
         val name = types?.firstOrNull {
             it?.slot == typeNumber
         }?.type?.name
-        if (name != null) {
-            return PokemonTypeEntity.valueOf(name.toUpperCase(Locale.getDefault()))
-        }
-        return null
+        return PokemonTypeEntity.parse(name)
     }
 }
