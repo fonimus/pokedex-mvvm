@@ -9,6 +9,11 @@
     <color name="white">#FFFFFFFF</color>
     <color name="grey">#CCCCCCCC</color>
 
+    <color name="primary">@color/type_fire</color>
+    <color name="primary_dark">#7E3D0D</color>
+    <color name="secondary">@color/type_water</color>
+    <color name="secondary_dark">#2B4E98</color>
+
     <color name="type_normal">#A8A77A</color>
     <color name="type_fire">#EE8130</color>
     <color name="type_water">#6390F0</color>

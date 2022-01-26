@@ -1,87 +1,166 @@
 package io.fonimus.pokedexmvvm.main
 
+import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.widget.SearchView
+import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityOptionsCompat
-import androidx.core.util.Pair
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.core.view.GravityCompat
+import androidx.preference.PreferenceManager
+import com.google.firebase.crashlytics.ktx.crashlytics
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.firestore.ktx.toObject
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.remoteconfig.ktx.remoteConfig
+import com.google.firebase.remoteconfig.ktx.remoteConfigSettings
 import dagger.hilt.android.AndroidEntryPoint
 import io.fonimus.pokedexmvvm.R
-import io.fonimus.pokedexmvvm.SettingsActivity
-import io.fonimus.pokedexmvvm.detail.DetailActivity
-import io.fonimus.pokedexmvvm.exhaustive
+import io.fonimus.pokedexmvvm.data.MessageWrapper
+import io.fonimus.pokedexmvvm.databinding.HeaderDrawerBinding
+import io.fonimus.pokedexmvvm.databinding.MainActivityBinding
+import io.fonimus.pokedexmvvm.settings.SettingsFragment
+import java.lang.IllegalArgumentException
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    private val pokemonViewModel by viewModels<PokemonViewModel>()
+    private val viewModel by viewModels<MainViewModel>()
+    private val listener =
+        SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+            Log.d("prefs", "$key changed in $sharedPreferences")
+        }
+    private lateinit var binding: MainActivityBinding
+
+    private val mainFragment = MainFragment.newInstance()
+    private val settingsFragment = SettingsFragment.newInstance()
+    private var selectedItem: NavigationItem? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        // Init view binding
+        binding = MainActivityBinding.inflate(layoutInflater)
+        HeaderDrawerBinding.bind(binding.navigationView.getHeaderView(0))
+        // Setup UI
+        setContentView(binding.root)
+        setSupportActionBar(binding.toolbar)
 
-        val typeRecyclerView: RecyclerView = findViewById(R.id.main_search_types)
-        val typeAdapter = TypeAdapter { type, checked ->
-            pokemonViewModel.onTypeChange(type, checked)
-        }
-        typeRecyclerView.adapter = typeAdapter
-        typeRecyclerView.layoutManager =
-            LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-
-        val pokemonsRecyclerView: RecyclerView = findViewById(R.id.main_recycler_view)
-        val pokemonsAdapter = PokemonAdapter(
-            { content, textView, imageView ->
-                pokemonViewModel.onPokemonClicked(content, textView, imageView)
-            }, {
-                // nothing yet
+        binding.bottomNavigation.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.bottom_navigation_home -> openFragment(NavigationItem.HOME)
+                R.id.bottom_navigation_settings -> openFragment(NavigationItem.SETTINGS)
             }
-        )
-        pokemonsRecyclerView.adapter = pokemonsAdapter
-        val layoutManager = LinearLayoutManager(this)
-        pokemonsRecyclerView.layoutManager = layoutManager
-        pokemonsRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    val viewHolder = recyclerView.findViewHolderForAdapterPosition(
-                        layoutManager.findLastCompletelyVisibleItemPosition()
-                    )
-                    if (viewHolder is PokemonViewLoadingHolder) {
-                        pokemonViewModel.loadNextPage()
-                    }
+            true
+        }
+        binding.navigationView.setNavigationItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.drawer_home -> openFragment(NavigationItem.HOME)
+                R.id.drawer_settings -> openFragment(NavigationItem.SETTINGS)
+            }
+            true
+        }
+
+        ActionBarDrawerToggle(
+            this,
+            binding.drawerLayout,
+            binding.toolbar,
+            R.string.description_open_drawer,
+            R.string.description_close_drawer
+        ).syncState()
+
+        supportFragmentManager.beginTransaction()
+            .add(binding.fragmentContainer.id, settingsFragment).detach(settingsFragment)
+            .commit()
+        supportFragmentManager.beginTransaction()
+            .add(binding.fragmentContainer.id, mainFragment)
+            .commit()
+
+
+        if (savedInstanceState == null) {
+            openFragment(NavigationItem.HOME)
+        }
+
+        // firebase remote config
+        val remoteConfig = Firebase.remoteConfig
+        val configSettings = remoteConfigSettings {
+            minimumFetchIntervalInSeconds = 3600
+        }
+        remoteConfig.setConfigSettingsAsync(configSettings)
+        remoteConfig.fetchAndActivate().addOnCompleteListener(this) { task ->
+            if (task.isSuccessful) {
+                val updated = task.result
+                Log.d("firebase", "Config params updated: $updated")
+                Log.d("firebase", remoteConfig.all.toString())
+                val iconType = remoteConfig.getString("icon_type")
+                Toast.makeText(
+                    this, "Fetch and activate succeeded (icon=$iconType)",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Toast.makeText(
+                    this, "Fetch failed",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        // firestore database
+        Firebase.firestore.collection("test").document("testId")
+            .addSnapshotListener { doc, error ->
+                Log.d("firestore", "Key: ${doc?.toObject<MessageWrapper>()?.key}")
+                if (error != null) {
+                    Firebase.crashlytics.recordException(error)
                 }
             }
-        })
+    }
 
-        pokemonViewModel.pokemonViewStateLiveData.observe(this) { state ->
-            pokemonsAdapter.submitList(state.items)
-            typeAdapter.submitList(state.types.toList())
-        }
-        pokemonViewModel.viewActions.observe(this) {
-            when (it) {
-                is PokemonViewActions.NavigateToDetail -> {
-                    val imageViewPair = Pair(it.imageView, it.imageView.transitionName)
-                    val textViewPair = Pair(it.textView, it.textView.transitionName)
+    private fun openFragment(item: NavigationItem) {
+        if (selectedItem != item) {
+            selectedItem = item
+            when (item) {
+                NavigationItem.HOME -> {
+                    binding.bottomNavigation.selectedItemId = R.id.bottom_navigation_home
+                    binding.navigationView.setCheckedItem(R.id.drawer_home)
 
-                    val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
-                        this,
-                        imageViewPair,
-                        textViewPair
-                    )
-                    startActivity(
-                        DetailActivity.navigate(
-                            this,
-                            it.pokemonId,
-                            it.pokemonId
-                        ), options.toBundle()
-                    )
+                    supportFragmentManager.beginTransaction()
+                        .attach(mainFragment).detach(settingsFragment)
+                        .commit()
                 }
-                is PokemonViewActions.NavigateToDetail2 -> TODO()
-            }.exhaustive
+                NavigationItem.SETTINGS -> {
+                    binding.bottomNavigation.selectedItemId = R.id.bottom_navigation_settings
+                    binding.navigationView.setCheckedItem(R.id.drawer_settings)
+
+                    supportFragmentManager.beginTransaction()
+                        .attach(settingsFragment).detach(mainFragment)
+                        .commit()
+                }
+            }
         }
+
+        closeDrawer()
+    }
+
+    private fun closeDrawer(): Boolean {
+        if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            binding.drawerLayout.closeDrawers()
+            return true
+        }
+        return false
+    }
+
+    override fun onBackPressed() {
+        if (!closeDrawer()) {
+            super.onBackPressed()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        PreferenceManager.getDefaultSharedPreferences(this)
+            .unregisterOnSharedPreferenceChangeListener(listener)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -96,13 +175,13 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onQueryTextChange(query: String?): Boolean {
-                pokemonViewModel.onQueryTextChange(query)
+                viewModel.onQueryTextChange(query)
                 return true
             }
         })
 
         menu.findItem(R.id.open_settings).setOnMenuItemClickListener {
-            startActivity(SettingsActivity.navigate(this))
+            openFragment(NavigationItem.SETTINGS)
             true
         }
         return true

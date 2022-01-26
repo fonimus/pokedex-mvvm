@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "1039256977381",
+    "project_id": "android-test-f3b42",
+    "storage_bucket": "android-test-f3b42.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1039256977381:android:17e02d0c8e7d82c006b90c",
+        "android_client_info": {
+          "package_name": "io.fonimus.pokedexmvvm"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1039256977381-9pl4upsogbbqf2g4f7l3t9ncukh80ums.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.fonimus.pokedexmvvm",
+            "certificate_hash": "61531b530fe52cbfceb63d1be6430d4b5857d8c7"
+          }
+        },
+        {
+          "client_id": "1039256977381-vmi6hv3nos3h0s44qm29cdt1a4rvuu0c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.fonimus.pokedexmvvm",
+            "certificate_hash": "ca81fefbb1e2c7b0e1191449e5f445091531fa22"
+          }
+        },
+        {
+          "client_id": "1039256977381-evg4b7qkflc7vruuotoj21o6k2bl0k94.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMYQMm-ww4UwSmUNxuDiBGryEGWC5xyOk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1039256977381-evg4b7qkflc7vruuotoj21o6k2bl0k94.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

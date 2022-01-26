@@ -6,6 +6,24 @@
         android:layout_height="match_parent"
         tools:context=".main.MainActivity">
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/crash_button"
+            app:srcCompat="@drawable/ic_baseline_search_24"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:contentDescription="CRASH" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/crash_button_non_fatal"
+            app:srcCompat="@drawable/ic_baseline_home_24"
+            app:layout_constraintBottom_toTopOf="@id/crash_button"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:contentDescription="CRASH" />
+
     <androidx.recyclerview.widget.RecyclerView
             android:layout_width="0dp"
             android:layout_height="wrap_content"

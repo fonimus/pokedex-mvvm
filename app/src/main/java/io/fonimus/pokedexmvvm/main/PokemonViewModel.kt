@@ -4,12 +4,16 @@ import android.view.View
 import androidx.lifecycle.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.fonimus.pokedexmvvm.SingleLiveEvent
+import io.fonimus.pokedexmvvm.data.CurrentSearchRepository
 import io.fonimus.pokedexmvvm.domain.LoadPokemonUseCase
 import io.fonimus.pokedexmvvm.domain.PokemonTypeEntity
 import javax.inject.Inject
 
 @HiltViewModel
-class PokemonViewModel @Inject constructor(private val loadPokemonUseCase: LoadPokemonUseCase) :
+class PokemonViewModel @Inject constructor(
+    private val loadPokemonUseCase: LoadPokemonUseCase,
+    currentSearchRepository: CurrentSearchRepository
+) :
     ViewModel() {
 
     val viewActions = SingleLiveEvent<PokemonViewActions>()
@@ -18,7 +22,7 @@ class PokemonViewModel @Inject constructor(private val loadPokemonUseCase: LoadP
 
     val pokemonViewStateLiveData: LiveData<PokemonViewState> = pokemonEntitiesMediatorLiveData
 
-    private val queryLiveData = MutableLiveData<String?>(null)
+    private val queryLiveData = currentSearchRepository.searchQueryFlow.asLiveData()
 
     private val typesLiveData = MutableLiveData<MutableList<PokemonTypeEntity>>(mutableListOf())
 
@@ -99,10 +103,6 @@ class PokemonViewModel @Inject constructor(private val loadPokemonUseCase: LoadP
 
     fun loadNextPage() {
         loadPokemonUseCase.nextPage()
-    }
-
-    fun onQueryTextChange(query: String?) {
-        queryLiveData.value = query
     }
 
     fun onTypeChange(type: PokemonTypeEntity, checked: Boolean) {

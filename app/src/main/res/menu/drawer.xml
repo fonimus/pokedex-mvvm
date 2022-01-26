@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+            android:id="@+id/drawer_home"
+            android:icon="@drawable/ic_baseline_home_24"
+            android:checkable="true"
+            android:title="@string/home" />
+    <item
+            android:id="@+id/drawer_settings"
+            android:icon="@drawable/ic_baseline_settings_24"
+            android:checkable="true"
+            android:title="@string/title_activity_settings" />
+</menu>
