@@ -33,7 +33,7 @@ class MainFragment : Fragment() {
     private val pokemonViewModel by viewModels<PokemonViewModel>()
     private val listener =
         SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
-            Log.d("prefs", "$key changed in $sharedPreferences")
+            Log.d("prefs", "$key changed to ${sharedPreferences.getBoolean(key, false)}")
         }
 
 
@@ -66,8 +66,9 @@ class MainFragment : Fragment() {
         Log.d("prefs", ">> " + prefs.getString("signature", "N/A"))
         val editor = prefs.edit()
         editor.putString("toto", "titi")
+        // apply -> value changed in memory
+        // commit -> force waiting to write into file
         editor.apply()
-        // editor.commit() -> force waiting to write file
 
         prefs.registerOnSharedPreferenceChangeListener(listener)
 
@@ -104,6 +105,7 @@ class MainFragment : Fragment() {
         pokemonViewModel.pokemonViewStateLiveData.observe(viewLifecycleOwner) { state ->
             pokemonsAdapter.submitList(state.items)
             typeAdapter.submitList(state.types.toList())
+            binding.swiperefresh.isRefreshing = state.isRefreshing
         }
         pokemonViewModel.viewActions.observe(viewLifecycleOwner) {
             when (it) {
@@ -136,6 +138,14 @@ class MainFragment : Fragment() {
         binding.crashButtonNonFatal.setOnClickListener {
             Firebase.crashlytics.log("${javaClass.simpleName} : before crash (non fatal)")
             Firebase.crashlytics.recordException(IllegalArgumentException("Test Crash Non Fatal"))
+        }
+        binding.crashButton.hide()
+        binding.crashButtonNonFatal.hide()
+
+        binding.swiperefresh.setOnRefreshListener {
+            Log.d("refresh", "Refreshing...")
+            pokemonViewModel.refresh()
+            Log.d("refresh", "Refreshed !")
         }
     }
 

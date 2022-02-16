@@ -4,7 +4,8 @@ import io.fonimus.pokedexmvvm.domain.PokemonTypeEntity
 
 data class PokemonViewState(
     val items: List<PokemonViewStateItem>,
-    val types: Set<PokemonTypeEntity>
+    val types: Set<PokemonTypeEntity>,
+    val isRefreshing: Boolean
 )
 
 sealed class PokemonViewStateItem(val type: Type) {

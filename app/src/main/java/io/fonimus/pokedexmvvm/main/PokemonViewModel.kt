@@ -5,6 +5,7 @@ import androidx.lifecycle.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.fonimus.pokedexmvvm.SingleLiveEvent
 import io.fonimus.pokedexmvvm.data.CurrentSearchRepository
+import io.fonimus.pokedexmvvm.domain.LoadPokemonResult
 import io.fonimus.pokedexmvvm.domain.LoadPokemonUseCase
 import io.fonimus.pokedexmvvm.domain.PokemonTypeEntity
 import javax.inject.Inject
@@ -26,27 +27,61 @@ class PokemonViewModel @Inject constructor(
 
     private val typesLiveData = MutableLiveData<MutableList<PokemonTypeEntity>>(mutableListOf())
 
-    private val pokemonEntitiesLiveData: LiveData<List<LoadPokemonUseCase.PokemonEntity>> =
+    private val refreshingLiveData = MutableLiveData(false)
+
+    private val pokemonEntitiesLiveData: LiveData<LoadPokemonResult> =
         loadPokemonUseCase().asLiveData()
 
     init {
+        addSources()
+    }
+
+    private fun addSources() {
         pokemonEntitiesMediatorLiveData.addSource(queryLiveData) { query ->
-            combine(query, typesLiveData.value!!, pokemonEntitiesLiveData.value)
+            combine(
+                query,
+                typesLiveData.value!!,
+                pokemonEntitiesLiveData.value,
+                refreshingLiveData.value!!
+            )
         }
         pokemonEntitiesMediatorLiveData.addSource(typesLiveData) { types ->
-            combine(queryLiveData.value, types, pokemonEntitiesLiveData.value)
+            combine(
+                queryLiveData.value,
+                types,
+                pokemonEntitiesLiveData.value,
+                refreshingLiveData.value!!
+            )
         }
         pokemonEntitiesMediatorLiveData.addSource(pokemonEntitiesLiveData) { entities ->
-            combine(queryLiveData.value, typesLiveData.value!!, entities)
+            combine(
+                queryLiveData.value,
+                typesLiveData.value!!,
+                entities,
+                refreshingLiveData.value!!
+            )
+        }
+        pokemonEntitiesMediatorLiveData.addSource(refreshingLiveData) { refreshing ->
+            combine(
+                queryLiveData.value,
+                typesLiveData.value!!,
+                pokemonEntitiesLiveData.value,
+                refreshing
+            )
         }
     }
 
     private fun combine(
         query: String?,
         types: List<PokemonTypeEntity>,
-        entities: List<LoadPokemonUseCase.PokemonEntity>?
+        result: LoadPokemonResult?,
+        refreshing: Boolean
     ) {
-        pokemonEntitiesMediatorLiveData.value = PokemonViewState(entities
+        if (refreshing && result is LoadPokemonResult.Content) {
+            refreshingLiveData.value = false
+            return
+        }
+        pokemonEntitiesMediatorLiveData.value = PokemonViewState((result as? LoadPokemonResult.Content)?.entities
             ?.filter {
                 it is LoadPokemonUseCase.PokemonEntity.Loading
                         || (matchQuery(query, it) && matchTypes(types, it))
@@ -60,13 +95,13 @@ class PokemonViewModel @Inject constructor(
                         pokemon.pokemonImageUrl
                     )
                 }
-            } ?: emptyList(), entities
+            } ?: emptyList(), (result as? LoadPokemonResult.Content)?.entities
             ?.asSequence()
             ?.filterIsInstance<LoadPokemonUseCase.PokemonEntity.Content>()
             ?.map { it.pokemonTypes }
             ?.flatten()
             ?.toSet()
-            ?: emptySet()
+            ?: emptySet(), refreshing && result is LoadPokemonResult.Loading
         )
     }
 
@@ -111,5 +146,10 @@ class PokemonViewModel @Inject constructor(
         } else {
             typesLiveData.value = typesLiveData.value?.apply { remove(type) }
         }
+    }
+
+    fun refresh() {
+        loadPokemonUseCase.refresh()
+        refreshingLiveData.value = true
     }
 }

@@ -29,10 +29,6 @@ import java.lang.IllegalArgumentException
 class MainActivity : AppCompatActivity() {
 
     private val viewModel by viewModels<MainViewModel>()
-    private val listener =
-        SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
-            Log.d("prefs", "$key changed in $sharedPreferences")
-        }
     private lateinit var binding: MainActivityBinding
 
     private val mainFragment = MainFragment.newInstance()
@@ -159,8 +155,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        PreferenceManager.getDefaultSharedPreferences(this)
-            .unregisterOnSharedPreferenceChangeListener(listener)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -182,6 +176,11 @@ class MainActivity : AppCompatActivity() {
 
         menu.findItem(R.id.open_settings).setOnMenuItemClickListener {
             openFragment(NavigationItem.SETTINGS)
+            true
+        }
+
+        menu.findItem(R.id.refresh).setOnMenuItemClickListener {
+            viewModel.refresh()
             true
         }
         return true
