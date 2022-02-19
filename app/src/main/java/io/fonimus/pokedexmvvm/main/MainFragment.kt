@@ -84,6 +84,11 @@ class MainFragment : Fragment() {
                 pokemonViewModel.onPokemonClicked(content, textView, imageView)
             }, {
                 // nothing yet
+            }, {
+                id -> {
+                Log.d("tag", "")
+                pokemonViewModel.onFavoriteClicked(id)
+                }
             }
         )
         binding.mainRecyclerView.adapter = pokemonsAdapter

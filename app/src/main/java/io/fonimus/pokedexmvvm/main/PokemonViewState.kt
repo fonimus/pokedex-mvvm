@@ -1,5 +1,6 @@
 package io.fonimus.pokedexmvvm.main
 
+import androidx.annotation.DrawableRes
 import io.fonimus.pokedexmvvm.domain.PokemonTypeEntity
 
 data class PokemonViewState(
@@ -16,7 +17,9 @@ sealed class PokemonViewStateItem(val type: Type) {
     data class Content(
         val pokemonId: String,
         val pokemonName: String,
-        val pokemonImageUrl: String
+        val pokemonImageUrl: String,
+        @DrawableRes
+        val starResourceDrawable: Int
     ) : PokemonViewStateItem(Type.CONTENT)
 
     object Loading : PokemonViewStateItem(Type.LOADING)

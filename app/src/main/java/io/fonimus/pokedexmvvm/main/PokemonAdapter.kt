@@ -3,18 +3,17 @@ package io.fonimus.pokedexmvvm.main
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
-import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import io.fonimus.pokedexmvvm.R
+import io.fonimus.pokedexmvvm.databinding.PokemonItemviewBinding
 
 class PokemonAdapter(
     private val onClickEvent: (PokemonViewStateItem.Content, View, View) -> Unit,
-    private val onLoadingEvent: () -> Unit
+    private val onLoadingEvent: () -> Unit,
+    private val onFavoriteClicked: (String) -> Unit
 ) :
     ListAdapter<PokemonViewStateItem, RecyclerView.ViewHolder>(PokemonDiffUtil) {
 
@@ -22,8 +21,7 @@ class PokemonAdapter(
         when (PokemonViewStateItem.Type.values()[viewType]) {
             PokemonViewStateItem.Type.CONTENT ->
                 PokemonViewContentHolder(
-                    LayoutInflater.from(parent.context)
-                        .inflate(R.layout.pokemon_itemview, parent, false)
+                    PokemonItemviewBinding.inflate(LayoutInflater.from(parent.context), parent, false)
                 )
             PokemonViewStateItem.Type.LOADING ->
                 PokemonViewLoadingHolder(
@@ -37,7 +35,8 @@ class PokemonAdapter(
         when (val item = getItem(position)) {
             is PokemonViewStateItem.Content -> (holder as PokemonViewContentHolder).bind(
                 item,
-                onClickEvent
+                onClickEvent,
+                onFavoriteClicked
             )
             is PokemonViewStateItem.Loading -> onLoadingEvent.invoke()
         }
@@ -59,20 +58,18 @@ object PokemonDiffUtil : DiffUtil.ItemCallback<PokemonViewStateItem>() {
         oldItem == newItem
 }
 
-class PokemonViewContentHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+class PokemonViewContentHolder(private val pokemonItemViewBinding: PokemonItemviewBinding) : RecyclerView.ViewHolder(pokemonItemViewBinding.root) {
 
-    private val pokemonCard: CardView = itemView.findViewById(R.id.pokemon_card)
-    private val pokemonNameTextView: TextView = itemView.findViewById(R.id.pokemon_name)
-    private val pokemonImageView: ImageView = itemView.findViewById(R.id.pokemon_image)
-
-    fun bind(state: PokemonViewStateItem.Content, onClickEvent: (PokemonViewStateItem.Content, View, View) -> Unit) {
-        pokemonCard.setOnClickListener { onClickEvent(state, pokemonNameTextView, pokemonImageView) }
-        pokemonNameTextView.text = state.pokemonName
-        pokemonNameTextView.transitionName = getTransitionName(state.pokemonId, TransitionType.TEXT)
-        pokemonImageView.transitionName = getTransitionName(state.pokemonId, TransitionType.IMAGE)
-        Glide.with(pokemonImageView).load(state.pokemonImageUrl)
+    fun bind(state: PokemonViewStateItem.Content, onClickEvent: (PokemonViewStateItem.Content, View, View) -> Unit, onFavoriteClicked: (String) -> Unit) {
+        pokemonItemViewBinding.star.setImageResource(state.starResourceDrawable)
+        pokemonItemViewBinding.pokemonCard.setOnClickListener { onClickEvent(state, pokemonItemViewBinding.pokemonName, pokemonItemViewBinding.pokemonImage) }
+        pokemonItemViewBinding.star.setOnClickListener { onFavoriteClicked(state.pokemonId) }
+        pokemonItemViewBinding.pokemonName.text = state.pokemonName
+        pokemonItemViewBinding.pokemonName.transitionName = getTransitionName(state.pokemonId, TransitionType.TEXT)
+        pokemonItemViewBinding.pokemonImage.transitionName = getTransitionName(state.pokemonId, TransitionType.IMAGE)
+        Glide.with(pokemonItemViewBinding.pokemonImage).load(state.pokemonImageUrl)
             .fitCenter()
-            .into(pokemonImageView)
+            .into(pokemonItemViewBinding.pokemonImage)
     }
 
 }

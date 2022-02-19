@@ -3,106 +3,82 @@ package io.fonimus.pokedexmvvm.main
 import android.view.View
 import androidx.lifecycle.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.fonimus.pokedexmvvm.R
 import io.fonimus.pokedexmvvm.SingleLiveEvent
+import io.fonimus.pokedexmvvm.combine
 import io.fonimus.pokedexmvvm.data.CurrentSearchRepository
+import io.fonimus.pokedexmvvm.data.FavoriteEntity
+import io.fonimus.pokedexmvvm.data.FavoritesDao
+import io.fonimus.pokedexmvvm.domain.CoroutineDispatchers
 import io.fonimus.pokedexmvvm.domain.LoadPokemonResult
 import io.fonimus.pokedexmvvm.domain.LoadPokemonUseCase
 import io.fonimus.pokedexmvvm.domain.PokemonTypeEntity
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class PokemonViewModel @Inject constructor(
     private val loadPokemonUseCase: LoadPokemonUseCase,
-    currentSearchRepository: CurrentSearchRepository
+    currentSearchRepository: CurrentSearchRepository,
+    private val coroutineDispatchers: CoroutineDispatchers,
+    private val favoritesDao: FavoritesDao
 ) :
     ViewModel() {
 
     val viewActions = SingleLiveEvent<PokemonViewActions>()
 
-    private val pokemonEntitiesMediatorLiveData = MediatorLiveData<PokemonViewState>()
-
-    val pokemonViewStateLiveData: LiveData<PokemonViewState> = pokemonEntitiesMediatorLiveData
-
-    private val queryLiveData = currentSearchRepository.searchQueryFlow.asLiveData()
+    private val queryLiveData =
+        currentSearchRepository.searchQueryFlow.asLiveData(coroutineDispatchers.io)
 
     private val typesLiveData = MutableLiveData<MutableList<PokemonTypeEntity>>(mutableListOf())
 
     private val refreshingLiveData = MutableLiveData(false)
 
+    private val favoritesLiveData = favoritesDao.getAll().asLiveData(coroutineDispatchers.io)
+
     private val pokemonEntitiesLiveData: LiveData<LoadPokemonResult> =
-        loadPokemonUseCase().asLiveData()
+        loadPokemonUseCase().asLiveData(coroutineDispatchers.io)
 
-    init {
-        addSources()
-    }
+    val pokemonViewStateLiveData: LiveData<PokemonViewState> = combine(
+        queryLiveData,
+        typesLiveData,
+        pokemonEntitiesLiveData,
+        refreshingLiveData,
+        favoritesLiveData
+    ) { query: String?, types: List<PokemonTypeEntity>?, result: LoadPokemonResult?, refreshing: Boolean?, favorites: List<FavoriteEntity>? ->
 
-    private fun addSources() {
-        pokemonEntitiesMediatorLiveData.addSource(queryLiveData) { query ->
-            combine(
-                query,
-                typesLiveData.value!!,
-                pokemonEntitiesLiveData.value,
-                refreshingLiveData.value!!
-            )
-        }
-        pokemonEntitiesMediatorLiveData.addSource(typesLiveData) { types ->
-            combine(
-                queryLiveData.value,
-                types,
-                pokemonEntitiesLiveData.value,
-                refreshingLiveData.value!!
-            )
-        }
-        pokemonEntitiesMediatorLiveData.addSource(pokemonEntitiesLiveData) { entities ->
-            combine(
-                queryLiveData.value,
-                typesLiveData.value!!,
-                entities,
-                refreshingLiveData.value!!
-            )
-        }
-        pokemonEntitiesMediatorLiveData.addSource(refreshingLiveData) { refreshing ->
-            combine(
-                queryLiveData.value,
-                typesLiveData.value!!,
-                pokemonEntitiesLiveData.value,
-                refreshing
-            )
-        }
-    }
-
-    private fun combine(
-        query: String?,
-        types: List<PokemonTypeEntity>,
-        result: LoadPokemonResult?,
-        refreshing: Boolean
-    ) {
-        if (refreshing && result is LoadPokemonResult.Content) {
+        if (refreshing!! && result is LoadPokemonResult.Content) {
             refreshingLiveData.value = false
-            return
+            return@combine
         }
-        pokemonEntitiesMediatorLiveData.value = PokemonViewState((result as? LoadPokemonResult.Content)?.entities
+        emit(PokemonViewState((result as? LoadPokemonResult.Content)?.entities
+            ?.asSequence()
             ?.filter {
                 it is LoadPokemonUseCase.PokemonEntity.Loading
-                        || (matchQuery(query, it) && matchTypes(types, it))
+                        || (matchQuery(query, it) && matchTypes(types!!, it))
             }
             ?.map { pokemon ->
                 when (pokemon) {
                     is LoadPokemonUseCase.PokemonEntity.Loading -> PokemonViewStateItem.Loading
                     is LoadPokemonUseCase.PokemonEntity.Content -> PokemonViewStateItem.Content(
-                        pokemon.pokemonNumber,
-                        pokemon.pokemonName,
-                        pokemon.pokemonImageUrl
+                        pokemonId = pokemon.pokemonNumber,
+                        pokemonName = pokemon.pokemonName,
+                        pokemonImageUrl = pokemon.pokemonImageUrl,
+                        starResourceDrawable = if (favorites?.find { it.pokemonId == pokemon.pokemonNumber } != null) {
+                            R.drawable.ic_baseline_star_24
+                        } else {
+                            R.drawable.ic_baseline_star_outline_24
+                        }
                     )
                 }
-            } ?: emptyList(), (result as? LoadPokemonResult.Content)?.entities
+            }?.toList() ?: emptyList(), (result as? LoadPokemonResult.Content)?.entities
             ?.asSequence()
             ?.filterIsInstance<LoadPokemonUseCase.PokemonEntity.Content>()
             ?.map { it.pokemonTypes }
             ?.flatten()
             ?.toSet()
             ?: emptySet(), refreshing && result is LoadPokemonResult.Loading
-        )
+        ))
     }
 
     private fun matchQuery(query: String?, entity: LoadPokemonUseCase.PokemonEntity): Boolean {
@@ -151,5 +127,19 @@ class PokemonViewModel @Inject constructor(
     fun refresh() {
         loadPokemonUseCase.refresh()
         refreshingLiveData.value = true
+    }
+
+    fun onFavoriteClicked(id: String) {
+        viewModelScope.launch(coroutineDispatchers.io) {
+            if (favoritesDao.getById(id) == null) {
+                favoritesDao.insert(
+                    FavoriteEntity(
+                        pokemonId = id
+                    )
+                )
+            } else {
+                favoritesDao.deleteById(id)
+            }
+        }
     }
 }
